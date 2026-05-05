@@ -17,7 +17,7 @@ function createNoOpClient(): Redis {
     },
   };
   logger.warn('Redis is disabled (REDIS_ENABLED=false). Token caching and rate limiting are inactive.');
-  return new Proxy({} as Redis, handler);
+  return new Proxy({} as any, handler) as Redis;
 }
 
 function createRedisClient(): Redis {

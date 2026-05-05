@@ -127,24 +127,33 @@ export async function checkAndAlert(
 ): Promise<void> {
   if (percentage >= threshold) return;
 
-  // Atomic deduplication check using SET NX
+  // Atomic deduplication check using Redis
   let isFirst = true;
+
   try {
-    const result = await redisClient.set(
-      `alert:${studentId}:${subjectId}`,
-      '1',
-      'NX',
-      'EX',
-      DEDUP_TTL
-    );
+    const result = await (redisClient as any).set(
+  `alert:${studentId}:${subjectId}`,
+  '1',
+  'EX',
+  DEDUP_TTL,
+  'NX'
+);
+
     isFirst = result === 'OK';
   } catch {
     // Fail open — allow alert if Redis unavailable
-    logger.warn('notification.dedup.redis_unavailable', { studentId, subjectId });
+    logger.warn('notification.dedup.redis_unavailable', {
+      studentId,
+      subjectId
+    });
   }
 
   if (!isFirst) {
-    logger.debug('notification.alert.suppressed', { studentId, subjectId, percentage });
+    logger.debug('notification.alert.suppressed', {
+      studentId,
+      subjectId,
+      percentage
+    });
     return;
   }
 
@@ -155,11 +164,17 @@ export async function checkAndAlert(
   ]);
 
   if (!student || !subject) {
-    logger.warn('notification.alert.missing_data', { studentId, subjectId });
+    logger.warn('notification.alert.missing_data', {
+      studentId,
+      subjectId
+    });
     return;
   }
 
-  const message = `Your attendance in ${subject.code} — ${subject.name} is ${percentage.toFixed(2)}% (below ${threshold}%)`;
+  const message =
+    `Your attendance in ${subject.code} — ${subject.name} is ${percentage.toFixed(
+      2
+    )}% (below ${threshold}%)`;
 
   // Create in-app notification
   const notification = await NotificationModel.create({
@@ -170,9 +185,15 @@ export async function checkAndAlert(
     emailStatus: 'pending',
   });
 
-  logger.info('notification.alert.triggered', { studentId, subjectId, percentage, threshold, notificationId: notification._id.toString() });
+  logger.info('notification.alert.triggered', {
+    studentId,
+    subjectId,
+    percentage,
+    threshold,
+    notificationId: notification._id.toString(),
+  });
 
-  // Enqueue email (non-blocking)
+  // Enqueue email
   enqueueEmail({
     notificationId: notification._id.toString(),
     studentEmail: student.email,

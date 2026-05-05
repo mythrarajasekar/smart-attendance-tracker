@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import 'express-async-errors';
 import express from 'express';
 import helmet from 'helmet';
@@ -67,7 +66,7 @@ const globalLimiter = rateLimit({
     store: (() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const RedisStore = require('rate-limit-redis');
-      return new RedisStore({ sendCommand: (...args: string[]) => redisClient.call(...args) });
+      return new RedisStore({ sendCommand: (...args: any[]) => (redisClient as any).call(...args) });
     })(),
   } : {}),
   message: { success: false, error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests' } },
