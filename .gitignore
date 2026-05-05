@@ -1,10 +1,1 @@
-.DS_Store
-.amazonq/**
-.claude/**
-!.claude/settings.json
-.codebuild/**
-.worktrees/**
-.vscode/**
-.env
-buildspec.yml
-codebuild_build.sh
+node_modules
